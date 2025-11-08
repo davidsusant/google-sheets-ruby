@@ -83,10 +83,22 @@ if __FILE__ == $PROGRAM_NAME
   spreadsheet_id = spreadsheet.spreadsheet_id
 
   # Write header row to API Tests sheet
-  headers = ['Test Case', 'Status', 'Duration', 'Error Message', 'Executed By']
+  headers = [['Test Case', 'Status', 'Duration', 'Error Message', 'Executed By']]
   manager.write_data(
     spreadsheet_id: spreadsheet_id,
     range: 'API Tests!A1:E1',
     values: headers
+  )
+
+  # Write sample test data
+  test_data = [
+    ['Login API Test', 'PASSED', '1.2s', '', 'automation@example.com'],
+    ['Get User Data', 'FAILED', '0.8s', 'Timeout error', 'automation@example.com'],
+    ['Create Order', 'PASSED', '2.1s', '', 'automation@example.com']
+  ]
+  manager.write_data(
+    spreadsheet_id: spreadsheet_id,
+    range: 'API Tests!A2:E4',
+    values: test_data
   )
 end

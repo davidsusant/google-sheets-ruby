@@ -29,6 +29,18 @@ class GoogleSheetsManager
     result
   end
 
+  # Write data to a specific range
+  def write_data(spreadsheet_id:, range:, values:)
+    value_range = Google::Apis::SheetsV4::ValueRange.new(values: values)
+    service.update_spreadsheet_value(
+      spreadsheet_id,
+      range,
+      value_range,
+      value_input_option: 'USER_ENTERED'
+    )
+    puts "Wrote #{values.size} rows to #{range}"
+  end
+
   private
 
   def authorize
@@ -69,4 +81,12 @@ if __FILE__ == $PROGRAM_NAME
     sheet_names: ['API Tests', 'UI Tests']
   )
   spreadsheet_id = spreadsheet.spreadsheet_id
+
+  # Write header row to API Tests sheet
+  headers = ['Test Case', 'Status', 'Duration', 'Error Message', 'Executed By']
+  manager.write_data(
+    spreadsheet_id: spreadsheet_id,
+    range: 'API Tests!A1:E1',
+    values: headers
+  )
 end

@@ -77,6 +77,31 @@ class GoogleSheetsManager
     puts "Formatted header row"
   end
 
+  def add_dropdown_validation(spreadsheet_id:, sheet_id:, range:, values:)
+    request = {
+      set_data_validation: {
+        range: {
+          sheet_id: sheet_id,
+          start_row_index: range[:start_row],
+          end_row_index: range[:end_row],
+          start_column_index: range[:start_column],
+          end_column_index: range[:end_column]
+        },
+        rule: {
+          condition: {
+            type: 'ONE_OF_LIST',
+            values: values.map { |v| { user_entered_value: v } }
+          },
+          show_custom_ui: true,
+          strict: true
+        }
+      }
+    }
+
+    batch_update(spreadsheet_id, [request])
+    puts "Added dropdown validation"
+  end
+
   # Get spreadsheet metadata
   def get_spreadsheet_info(spreadsheet_id:)
     spreadsheet = service.get_spreadsheet(spreadsheet_id)
@@ -170,5 +195,13 @@ if __FILE__ == $PROGRAM_NAME
   manager.format_header_row(
     spreadsheet_id: spreadsheet_id,
     sheet_id: api_tests_sheet_id,
+  )
+
+  # Add dropdown for Status column (column B, index 1)
+  manager.add_dropdown_validation(
+    spreadsheet_id: spreadsheet_id,
+    sheet_id: api_tests_sheet_id,
+    range: { start_row: 1, end_row: 1000, start_column: 1, end_column: 2},
+    values: %w[PASSED FAILED SKIPPED BLOCKED]
   )
 end

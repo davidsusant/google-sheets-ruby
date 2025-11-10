@@ -41,6 +41,59 @@ class GoogleSheetsManager
     puts "Wrote #{values.size} rows to #{range}"
   end
 
+  # Format header row (bold, background color, freeze)
+  def format_header_row(spreadsheet_id:, sheet_id: 0)
+    requests = [
+      # Make first row bold
+      {
+        repeat_cell: {
+          range: {
+            sheet_id: sheet_id,
+            start_row_index: 0,
+            end_row_index: 1
+          },
+          cell: {
+            user_entered_format: {
+              text_format: { bold: true },
+              background_color: { red: 0.9, green: 0.9, blue: 0.9 }
+            }
+          },
+          fields: 'userEnteredFormat(textFormat, backgroundColor)'
+        }
+      },
+      # Freeze first row
+      {
+        update_sheet_properties: {
+          properties: {
+            sheet_id: sheet_id,
+            grid_properties: { frozen_row_count: 1 }
+          },
+          fields: 'gridProperties.frozenRowCount'
+        }
+      }
+    ]
+
+    batch_update(spreadsheet_id, requests)
+    puts "Formatted header row"
+  end
+
+  # Get spreadsheet metadata
+  def get_spreadsheet_info(spreadsheet_id:)
+    spreadsheet = service.get_spreadsheet(spreadsheet_id)
+    {
+      title: spreadsheet.properties.title,
+      sheets: spreadsheet.sheets.map do |sheet|
+        {
+          title: sheet.properties.title,
+          sheet_id: sheet.properties.sheet_id,
+          row_count: sheet.properties.grid_properties.row_count,
+          column_count: sheet.properties.grid_properties.column_count
+        }
+      end,
+      url: spreadsheet.spreadsheet_url(spreadsheet_id)
+    }
+  end
+
   private
 
   def authorize
@@ -60,6 +113,13 @@ class GoogleSheetsManager
         )
       )
     )
+  end
+
+  def batch_update(spreadsheet_id, requests)
+    request_body = Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new(
+      requests: requests.map { |r| Google::Apis::SheetsV4::Request.new(r) }
+    )
+    service.batch_update_spreadsheet(spreadsheet_id, request_body)
   end
 end
 
@@ -100,5 +160,15 @@ if __FILE__ == $PROGRAM_NAME
     spreadsheet_id: spreadsheet_id,
     range: 'API Tests!A2:E4',
     values: test_data
+  )
+
+  # Get sheet ID for API Tests (usually 0 for first sheet)
+  info = manager.get_spreadsheet_info(spreadsheet_id: spreadsheet_id)
+  api_tests_sheet_id = info[:sheets].find { |s| s[:title] == 'API Tests' }[:sheet_id]
+
+  # Format header row
+  manager.format_header_row(
+    spreadsheet_id: spreadsheet_id,
+    sheet_id: api_tests_sheet_id,
   )
 end

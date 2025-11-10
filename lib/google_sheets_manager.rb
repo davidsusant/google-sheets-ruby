@@ -77,6 +77,23 @@ class GoogleSheetsManager
     puts "Formatted header row"
   end
 
+  # Auto-resize columns to fit content
+  def auto_resize_column(spreadsheet_id:, sheet_id: 0, start_column: 0, end_column: 26)
+    request = {
+      auto_resize_column: {
+        dimensions: {
+          sheet_id: sheet_id,
+          dimension: 'COLUMNS',
+          start_index: start_column,
+          end_index: end_column
+        }
+      }
+    }
+
+    batch_update(spreadsheet_id, [request])
+    puts "Auto-resize columns"
+  end
+
   def add_dropdown_validation(spreadsheet_id:, sheet_id:, range:, values:)
     request = {
       set_data_validation: {
@@ -203,5 +220,13 @@ if __FILE__ == $PROGRAM_NAME
     sheet_id: api_tests_sheet_id,
     range: { start_row: 1, end_row: 1000, start_column: 1, end_column: 2},
     values: %w[PASSED FAILED SKIPPED BLOCKED]
+  )
+
+  # Auto-resize all columns
+  manager.auto_resize_column(
+    spreadsheet_id: spreadsheet_id,
+    sheet_id: api_tests_sheet_id,
+    start_column: 0,
+    end_column: 5
   )
 end
